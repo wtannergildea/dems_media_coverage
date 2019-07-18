@@ -16,7 +16,7 @@ The graph below helps answer these two questions.
 <br />
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -37,7 +37,6 @@ download.file(url = "https://raw.githubusercontent.com/fivethirtyeight/data/mast
 
 cable <- read_csv("cable_weekly.csv")
 
-
 online <- read_csv("online_weekly.csv")
 
 fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
@@ -47,7 +46,7 @@ fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
 cable_joined_online <- merge(cable, online, by = c("name","date" ))
 ```
 
-```{r join}
+```{r join, fig.width = 10, fig.height = 8}
 clean_cable_joined_online <- cable_joined_online %>% 
   filter(name %in% c("Joe Biden", 
                      "Pete Buttigieg", 
@@ -125,8 +124,9 @@ ggplot(clean_cable_joined_online, aes(x = date,
 
 ```
 
+*****
 
-```{r change_table}
+```{r change_table_cleaning}
 
 # Cable table data
 
@@ -134,7 +134,10 @@ cable_table <- cable %>%
   select(name, date, pct_of_all_candidate_clips) %>% 
   filter(date == "2019-01-06" | date == "2019-07-07") %>% 
   spread(key = date, value = pct_of_all_candidate_clips) %>% 
-  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Cable", "Jul. 7th Cable")) %>% 
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Cable", "Jul. 7th Cable")) 
+
+
+cable_table <- cable_table %>% 
   mutate("Percent Cable Change" = cable_table$'Jul. 7th Cable' - cable_table$'Jan. 6th Cable')
 
 # Online table data
@@ -143,13 +146,17 @@ online_table <- online %>%
   select(name, date, pct_of_all_candidate_stories) %>% 
   filter(date == "2019-01-06" | date == "2019-07-07") %>% 
   spread(key = date, value = pct_of_all_candidate_stories) %>% 
-  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Online", "Jul. 7th Online")) %>% 
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Online", "Jul. 7th Online"))
+
+online_table <- online_table %>% 
   mutate("Percent Online Change" = online_table$'Jul. 7th Online' - online_table$'Jan. 6th Online')
 
 # join data
 
 joined_table <- left_join(cable_table, online_table) 
+```
 
+```{r change_table, results="asis", fig.width = 5, fig.height = 8}
 # construct table
 gt(joined_table) %>%
   tab_header(
@@ -158,7 +165,8 @@ gt(joined_table) %>%
   
 # Here I simply column names.
   
-  cols_label("Jan. 6th Cable" = "Jan. 6",
+  cols_label(name = "Candidate",
+                            "Jan. 6th Cable" = "Jan. 6",
                             "Jul. 7th Cable" = "Jul. 7th",
                             "Percent Cable Change" = "Percent Change",
                             "Jan. 6th Online" = "Jan. 6th",
@@ -179,156 +187,111 @@ gt(joined_table) %>%
               columns = vars("Jan. 6th Online", "Jul. 7th Online", "Percent Online Change")) %>% 
   
   tab_source_note("Source: FiveThirtyEight.com") %>% 
-  tab_source_note("Data collected by...")
+  tab_source_note("Data collected by...")  %>% 
+  
+  # add cell coloring
+  
+  data_color(
+    columns = vars("Percent Cable Change"),
+    colors = scales::col_factor(
+      palette = c(
+        "red", "white", "white", "green"),
+      domain = NULL)) %>% 
+  
+  data_color(
+    columns = vars("Percent Online Change"),
+    colors = scales::col_factor(
+      palette = c(
+        "red", "white", "white", "green"),
+      domain = NULL)) 
   
 # This sequence of functions allows the table to transfer nicely into RMarkdown.
     # as_raw_html() %>% as.character() %>% cat()
 
 ```
 
+```{r debate_bump}
+
+# Cable table data
+
+cable_table_bump <- cable %>% 
+  select(name, date, pct_of_all_candidate_clips) %>% 
+  filter(date == "2019-06-16" | date == "2019-06-23") %>% 
+  spread(key = date, value = pct_of_all_candidate_clips) %>% 
+  setnames(old=c("2019-06-16","2019-06-23"), new=c("Before", "After")) 
 
 
+cable_table_bump <- cable_table_bump %>%
+  mutate("Percent Cable Change" = cable_table_bump$'After' - cable_table_bump$'Before')
 
+# Online table data
 
+online_table_bump <- online %>% 
+  select(name, date, pct_of_all_candidate_stories) %>% 
+  filter(date == "2019-06-16" | date == "2019-06-23") %>% 
+  spread(key = date, value = pct_of_all_candidate_stories) %>% 
+  setnames(old=c("2019-06-16","2019-06-23"), new=c("Before", "After"))
 
-```{r cable_graph}
+online_table_bump <- online_table_bump %>%
+  mutate("Percent Online Change" = online_table_bump$'After' - online_table_bump$'Before')
 
-# clean_cable <- cable %>% 
-#   filter(name %in% c("Joe Biden", 
-#                      "Pete Buttigieg", 
-#                      "Elizabeth Warren", 
-#                      "Kamala Harris", 
-#                      "Bernie Sanders",
-#                      "Beto O'Rourke")) %>% 
-#   group_by(name)
-# 
-# 
-# ggplot(clean_cable, aes(x = date, 
-#                         y = pct_of_all_candidate_clips,
-#                         color = name,
-#                         fill = name)) +
-#   
-#   geom_point() +
-#   geom_smooth(level  = .50, method = "loess") +
-#   
-#   scale_y_sqrt(labels = scales::percent,
-#     breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
-#    
-#   facet_wrap(~name) +
-#   
-# #  scale_x_date(date_breaks = "1 month") + 
-#   
-#   labs(x = NULL, y = "Percent of Coverage",
-#        title = "Cable Attention Paid to Top Democratic Candidates",
-#        subtitle = "Averages Greater than 5% Across CNN, Fox News, and MSNBC",
-#        caption = "Source: FiveThirtyEight.com") +
-#   
-#   scale_color_brewer(palette = "Paired") +
-#   scale_fill_brewer(palette = "Paired") +
-#   
-#   scale_fill_discrete(name = "Candidate") + 
-#   scale_color_discrete(name = "Candidate") +
-#   
-#   theme_tufte() +
-#   
-#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-#         plot.subtitle = element_text(face = "italic"),
-#         legend.title = element_text(size = rel(1.2), face = "bold"),
-#         axis.title.y = element_text(size = rel(1.2)),
-#         plot.caption = element_text(face = "italic"),
-#         panel.grid.major.y = element_line(color = "gray"))
-```
+# join data
 
-```{r online_graph}
-# clean_online <- online %>% 
-#   filter(name %in% c("Joe Biden", 
-#                      "Pete Buttigieg", 
-#                      "Elizabeth Warren", 
-#                      "Kamala Harris", 
-#                      "Bernie Sanders",
-#                      "Cory Booker")) %>% 
-#   group_by(name)
-# 
-# 
-# ggplot(clean_online, aes(x = date, 
-#                         y = pct_of_all_candidate_stories,
-#                         color = name,
-#                         fill = name)) +
-#   
-#   geom_point() +
-#   geom_smooth(level  = .50, method = "loess") +
-#   
-#   scale_y_sqrt(labels = scales::percent,
-#     breaks = c(.025, .05, 0.1, 0.2, 0.4, .6)) +
-#   
-#   facet_wrap(~name) +
-#   
-# #  scale_x_date(date_breaks = "1 month") + 
-#   
-#   labs(x = NULL, y = "Percent of Coverage",
-#        title = "Online Attention Paid to Top Democratic Candidates",
-#        subtitle = "Averages Greater Than 10% in the Media Cloud database",
-#        caption = "Source: FiveThirtyEight.com") +
-#   
-#   scale_color_brewer(palette = "Set1") +
-#   scale_fill_brewer(palette = "Set1") +
-#   
-#   scale_fill_discrete(name = "Candidate") + 
-#   scale_color_discrete(name = "Candidate") +
-#   
-#   theme_tufte() +
-#   
-#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-#         plot.subtitle = element_text(face = "italic"),
-#         legend.title = element_text(size = rel(1.2), face = "bold"),
-#         axis.title.y = element_text(size = rel(1.2)),
-#         plot.caption = element_text(face = "italic"),
-#         panel.grid.major.y = element_line(color = "gray"))
-
+joined_table_bump <- left_join(cable_table_bump, online_table_bump, by = "name") 
 
 ```
 
 
-```{r yang}
-# clean_yang <- online %>% 
-#   filter(name %in% c("Andrew Yang", "Marianne Williamson", "Eric Swalwell", "Tulsi Gabbard")) %>% 
-#   group_by(name)
-# 
-# 
-# ggplot(clean_yang, aes(x = date, 
-#                         y = pct_of_all_candidate_stories,
-#                         color = name,
-#                         fill = name)) +
-#   
-#   geom_point() +
-#   geom_smooth(level  = .50, method = "loess") +
-#   
-#   scale_y_sqrt(labels = scales::percent,
-#     breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
-#   
-# #  scale_x_date(date_breaks = "1 month") + 
-#   
-#   labs(x = NULL, y = "Percent of Coverage",
-#        title = "Online Attention Paid to Top Democratic Candidates",
-#        subtitle = "From the Media Cloud database",
-#        caption = "Source: FiveThirtyEight.com") +
-#   
-#   scale_color_brewer(palette = "Paired") +
-#   scale_fill_brewer(palette = "Paired") +
-#   
-#   scale_fill_discrete(name = "Candidate") + 
-#   scale_color_discrete(name = "Candidate") +
-#   
-#   theme_tufte() +
-#   
-#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-#         plot.subtitle = element_text(face = "italic"),
-#         legend.title = element_text(size = rel(1.2), face = "bold"),
-#         axis.title.y = element_text(size = rel(1.2)),
-#         plot.caption = element_text(face = "italic"),
-#         panel.grid.major.y = element_line(color = "gray"))
+```{r change_table_bump, results="asis", fig.width = 5, fig.height = 8}
+# construct table
+gt(joined_table_bump) %>%
+  tab_header(
+    title = "How did the first debates change candidate coverage?",
+    subtitle = "June 16th to June 23rd, 2019") %>% 
+  
+# Here I simply column names.
+  
+  cols_label(name = "Candidate",
+             "Before.x" = "Before",
+             "After.x" = "After",
+             "Before.y" = "Before",
+             "After.y" = "After",
+                            "Percent Cable Change" = "Percent Change",
+                            "Percent Online Change" = "Percent Change") %>%
+  
+ fmt_percent(columns = vars("Before.x",
+                            "After.x",
+                            "Percent Cable Change",
+                            "Before.y",
+                            "After.y",
+                            "Percent Online Change"))  %>% 
+  
+  tab_spanner(label = "Cable", 
+              columns = vars("Before.x", "After.x", "Percent Cable Change")) %>%
+  
+  tab_spanner(label = "Online", 
+              columns = vars("Before.y", "After.y", "Percent Online Change")) %>% 
+  
+  tab_source_note("Source: FiveThirtyEight.com") %>% 
+  tab_source_note("Data collected by...")  %>% 
+  
+  # add cell coloring
+  
+  data_color(
+    columns = vars("Percent Cable Change"),
+    colors = scales::col_factor(
+      palette = c(
+        "red",  "white", "white", "white", "green"),
+      domain = NULL)) %>% 
+  
+  data_color(
+    columns = vars("Percent Online Change"),
+    colors = scales::col_factor(
+      palette = c(
+        "red", "white", "white", "white", "green"),
+      domain = NULL)) 
+  
+# This sequence of functions allows the table to transfer nicely into RMarkdown.
+    # as_raw_html() %>% as.character() %>% cat()
+
 ```
-
-
-
-
