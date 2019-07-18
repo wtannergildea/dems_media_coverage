@@ -1,12 +1,16 @@
 ---
-title: "Dems Media Coverage"
+title: "Which Democratic candidates are getting mentioned the most on cable and online news?"
 author: "Tanner Gildea"
 date: "7/17/2019"
 output: html_document
 ---
 
+FiveThirtyEight is currently running an [interesting series](https://fivethirtyeight.com/tag/media/) analyzing how cable news and online media sources are covering the Democratic presidential candidates. [Dhrumil Mehta](https://fivethirtyeight.com/contributors/dhrumil-mehta/), one of FiveThirtyEight's data journalists, has  diligently updated the series each week, keeping track of how coverage of individual candidates has risen and fallen. They have also kindly shared the underlying data [here](https://github.com/fivethirtyeight/data/tree/master/media-mentions-2020).
+
+Personally, I was interested in seeing how the top candidates have been covered by cable and online media since the beginning of the race (roughly January of 2019). I also wanted to see if and how coverage of candidates diverged based on media type - cable or online. 
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 9, fig.height = 8)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -29,135 +33,217 @@ cable <- read_csv("cable_weekly.csv")
 online <- read_csv("online_weekly.csv") 
 
 fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
+
+
+
+cable_joined_online <- merge(cable, online, by = c("name","date" ))
 ```
 
 Percentage totals exceed 100 because some articles or stories mention multiple candidates.
 
 ```{r cable_graph}
 
-clean_cable <- cable %>% 
-  filter(name %in% c("Joe Biden", 
-                     "Pete Buttigieg", 
-                     "Elizabeth Warren", 
-                     "Kamala Harris", 
-                     "Bernie Sanders",
-                     "Beto O'Rourke",
-                     "Cory Booker")) %>% 
-  group_by(name)
-
-
-ggplot(clean_cable, aes(x = date, 
-                        y = pct_of_all_candidate_clips,
-                        color = name,
-                        fill = name)) +
-  
-  geom_point() +
-  geom_smooth(level  = .50, method = "loess") +
-  
-  scale_y_sqrt(labels = scales::percent,
-    breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
-  
-#  scale_x_date(date_breaks = "1 month") + 
-  
-  labs(x = NULL, y = "Percent of Coverage",
-       title = "Cable Attention Paid to Top Democratic Candidates",
-       subtitle = "Averages Greater than 5% Across CNN, Fox News, and MSNBC",
-       caption = "Source: FiveThirtyEight.com") +
-  
-  scale_color_brewer(palette = "Paired") +
-  scale_fill_brewer(palette = "Paired") +
-  
-  scale_fill_discrete(name = "Candidate") + 
-  scale_color_discrete(name = "Candidate") +
-  
-  theme_tufte() +
-  
-  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-        plot.subtitle = element_text(face = "italic"),
-        legend.title = element_text(size = rel(1.2), face = "bold"),
-        axis.title.y = element_text(size = rel(1.2)),
-        plot.caption = element_text(face = "italic"),
-        panel.grid.major.y = element_line(color = "gray"))
+# clean_cable <- cable %>% 
+#   filter(name %in% c("Joe Biden", 
+#                      "Pete Buttigieg", 
+#                      "Elizabeth Warren", 
+#                      "Kamala Harris", 
+#                      "Bernie Sanders",
+#                      "Beto O'Rourke")) %>% 
+#   group_by(name)
+# 
+# 
+# ggplot(clean_cable, aes(x = date, 
+#                         y = pct_of_all_candidate_clips,
+#                         color = name,
+#                         fill = name)) +
+#   
+#   geom_point() +
+#   geom_smooth(level  = .50, method = "loess") +
+#   
+#   scale_y_sqrt(labels = scales::percent,
+#     breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
+#    
+#   facet_wrap(~name) +
+#   
+# #  scale_x_date(date_breaks = "1 month") + 
+#   
+#   labs(x = NULL, y = "Percent of Coverage",
+#        title = "Cable Attention Paid to Top Democratic Candidates",
+#        subtitle = "Averages Greater than 5% Across CNN, Fox News, and MSNBC",
+#        caption = "Source: FiveThirtyEight.com") +
+#   
+#   scale_color_brewer(palette = "Paired") +
+#   scale_fill_brewer(palette = "Paired") +
+#   
+#   scale_fill_discrete(name = "Candidate") + 
+#   scale_color_discrete(name = "Candidate") +
+#   
+#   theme_tufte() +
+#   
+#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+#         plot.subtitle = element_text(face = "italic"),
+#         legend.title = element_text(size = rel(1.2), face = "bold"),
+#         axis.title.y = element_text(size = rel(1.2)),
+#         plot.caption = element_text(face = "italic"),
+#         panel.grid.major.y = element_line(color = "gray"))
 ```
 
 ```{r online_graph}
-clean_online <- online %>% 
-  filter(name %in% c("Joe Biden", 
-                     "Pete Buttigieg", 
-                     "Elizabeth Warren", 
-                     "Kamala Harris", 
-                     "Bernie Sanders",
-                     "Cory Booker",
-                     "Amy Klobuchar")) %>% 
-  group_by(name)
-
-
-ggplot(clean_online, aes(x = date, 
-                        y = pct_of_all_candidate_stories,
-                        color = name,
-                        fill = name)) +
-  
-  geom_point() +
-  geom_smooth(level  = .50, method = "loess") +
-  
-  scale_y_sqrt(labels = scales::percent,
-    breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
-  
-#  scale_x_date(date_breaks = "1 month") + 
-  
-  labs(x = NULL, y = "Percent of Coverage",
-       title = "Online Attention Paid to Top Democratic Candidates",
-       subtitle = "Averages Greater Than 10% in the Media Cloud database",
-       caption = "Source: FiveThirtyEight.com") +
-  
-  scale_color_brewer(palette = "Paired") +
-  scale_fill_brewer(palette = "Paired") +
-  
-  scale_fill_discrete(name = "Candidate") + 
-  scale_color_discrete(name = "Candidate") +
-  
-  theme_tufte() +
-  
-  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-        plot.subtitle = element_text(face = "italic"),
-        legend.title = element_text(size = rel(1.2), face = "bold"),
-        axis.title.y = element_text(size = rel(1.2)),
-        plot.caption = element_text(face = "italic"),
-        panel.grid.major.y = element_line(color = "gray"))
+# clean_online <- online %>% 
+#   filter(name %in% c("Joe Biden", 
+#                      "Pete Buttigieg", 
+#                      "Elizabeth Warren", 
+#                      "Kamala Harris", 
+#                      "Bernie Sanders",
+#                      "Cory Booker")) %>% 
+#   group_by(name)
+# 
+# 
+# ggplot(clean_online, aes(x = date, 
+#                         y = pct_of_all_candidate_stories,
+#                         color = name,
+#                         fill = name)) +
+#   
+#   geom_point() +
+#   geom_smooth(level  = .50, method = "loess") +
+#   
+#   scale_y_sqrt(labels = scales::percent,
+#     breaks = c(.025, .05, 0.1, 0.2, 0.4, .6)) +
+#   
+#   facet_wrap(~name) +
+#   
+# #  scale_x_date(date_breaks = "1 month") + 
+#   
+#   labs(x = NULL, y = "Percent of Coverage",
+#        title = "Online Attention Paid to Top Democratic Candidates",
+#        subtitle = "Averages Greater Than 10% in the Media Cloud database",
+#        caption = "Source: FiveThirtyEight.com") +
+#   
+#   scale_color_brewer(palette = "Set1") +
+#   scale_fill_brewer(palette = "Set1") +
+#   
+#   scale_fill_discrete(name = "Candidate") + 
+#   scale_color_discrete(name = "Candidate") +
+#   
+#   theme_tufte() +
+#   
+#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+#         plot.subtitle = element_text(face = "italic"),
+#         legend.title = element_text(size = rel(1.2), face = "bold"),
+#         axis.title.y = element_text(size = rel(1.2)),
+#         plot.caption = element_text(face = "italic"),
+#         panel.grid.major.y = element_line(color = "gray"))
 
 
 ```
 
 
 ```{r yang}
-clean_yang <- online %>% 
-  filter(name %in% c("Andrew Yang", "Marianne Williamson", "Eric Swalwell", "Tulsi Gabbard")) %>% 
+# clean_yang <- online %>% 
+#   filter(name %in% c("Andrew Yang", "Marianne Williamson", "Eric Swalwell", "Tulsi Gabbard")) %>% 
+#   group_by(name)
+# 
+# 
+# ggplot(clean_yang, aes(x = date, 
+#                         y = pct_of_all_candidate_stories,
+#                         color = name,
+#                         fill = name)) +
+#   
+#   geom_point() +
+#   geom_smooth(level  = .50, method = "loess") +
+#   
+#   scale_y_sqrt(labels = scales::percent,
+#     breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
+#   
+# #  scale_x_date(date_breaks = "1 month") + 
+#   
+#   labs(x = NULL, y = "Percent of Coverage",
+#        title = "Online Attention Paid to Top Democratic Candidates",
+#        subtitle = "From the Media Cloud database",
+#        caption = "Source: FiveThirtyEight.com") +
+#   
+#   scale_color_brewer(palette = "Paired") +
+#   scale_fill_brewer(palette = "Paired") +
+#   
+#   scale_fill_discrete(name = "Candidate") + 
+#   scale_color_discrete(name = "Candidate") +
+#   
+#   theme_tufte() +
+#   
+#   theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+#         plot.subtitle = element_text(face = "italic"),
+#         legend.title = element_text(size = rel(1.2), face = "bold"),
+#         axis.title.y = element_text(size = rel(1.2)),
+#         plot.caption = element_text(face = "italic"),
+#         panel.grid.major.y = element_line(color = "gray"))
+```
+
+
+```{r join}
+clean_cable_joined_online <- cable_joined_online %>% 
+  filter(name %in% c("Joe Biden", 
+                     "Pete Buttigieg", 
+                     "Elizabeth Warren", 
+                     "Kamala Harris", 
+                     "Bernie Sanders",
+                     "Beto O'Rourke",
+                     "Julian Castro",
+                     "Amy Klobuchar",
+                     "Cory Booker")) %>% 
   group_by(name)
 
+# Needed to distinguish on graph w/ fill and color
 
-ggplot(clean_yang, aes(x = date, 
+clean_cable_joined_online$query.x <- "Cable News"
+clean_cable_joined_online$query.y <- "Online Articles"
+
+# Start graph
+
+ggplot(clean_cable_joined_online, aes(x = date, 
                         y = pct_of_all_candidate_stories,
-                        color = name,
-                        fill = name)) +
+                        color = query.x,
+                        fill = query.x)) +
   
   geom_point() +
+  
   geom_smooth(level  = .50, method = "loess") +
+  
+  # for second line
+  
+  geom_point(aes(x = date, 
+                        y = pct_of_all_candidate_clips,
+                        color = query.y,
+                        fill = query.y)) +
+  
+  geom_smooth(aes(x = date, 
+                        y = pct_of_all_candidate_clips,
+                        color = query.y,
+                        fill = query.y),
+              
+              level  = .50, method = "loess") +
+  
+  # Makes scale more readable
   
   scale_y_sqrt(labels = scales::percent,
     breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
   
+  facet_wrap(~name) +
+  
 #  scale_x_date(date_breaks = "1 month") + 
   
-  labs(x = NULL, y = "Percent of Coverage",
-       title = "Online Attention Paid to Top Democratic Candidates",
-       subtitle = "From the Media Cloud database",
+  # Style Settings
+  
+  labs(x = NULL, y = "Percent of Articles and Stories That Mention Each Candidate",
+       title = "How often are the candidates mentioned in cable and online news?",
+       subtitle = "Cable includes CNN, Fox News, and MSNBC - Online articles sourced from the Media Cloud database",
        caption = "Source: FiveThirtyEight.com") +
   
   scale_color_brewer(palette = "Paired") +
   scale_fill_brewer(palette = "Paired") +
   
-  scale_fill_discrete(name = "Candidate") + 
-  scale_color_discrete(name = "Candidate") +
+  scale_fill_discrete(name = "Media Type") + 
+  scale_color_discrete(name = "Media Type") +
   
   theme_tufte() +
   
@@ -167,10 +253,6 @@ ggplot(clean_yang, aes(x = date,
         axis.title.y = element_text(size = rel(1.2)),
         plot.caption = element_text(face = "italic"),
         panel.grid.major.y = element_line(color = "gray"))
-
-
-
-
 
 ```
 
