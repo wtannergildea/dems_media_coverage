@@ -5,12 +5,18 @@ date: "7/17/2019"
 output: html_document
 ---
 
+<br />
+
 FiveThirtyEight is currently running an [interesting series](https://fivethirtyeight.com/tag/media/) analyzing how cable news and online media sources are covering the Democratic presidential candidates. [Dhrumil Mehta](https://fivethirtyeight.com/contributors/dhrumil-mehta/), one of FiveThirtyEight's data journalists, has  diligently updated the series each week, keeping track of how coverage of individual candidates has risen and fallen. They have also kindly shared the underlying data [here](https://github.com/fivethirtyeight/data/tree/master/media-mentions-2020).
 
-Personally, I was interested in seeing how the top candidates have been covered by cable and online media since the beginning of the race (roughly January of 2019). I also wanted to see if and how coverage of candidates diverged based on media type - cable or online. 
+Personally, I was interested in seeing how coverage of the top candidates has changed since the beginning of the race (roughly January of 2019). I also wanted to see if coverage of candidates diverged based on media type - cable or online. 
+
+The graph below helps answer these two questions.
+
+<br />
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 9, fig.height = 8)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 8)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -18,6 +24,7 @@ library(janitor)
 library(readxl)
 library(gt)
 library(ggthemes)
+library(data.table)
 
 
 download.file(url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/media-mentions-2020/cable_weekly.csv",
@@ -30,7 +37,8 @@ download.file(url = "https://raw.githubusercontent.com/fivethirtyeight/data/mast
 
 cable <- read_csv("cable_weekly.csv")
 
-online <- read_csv("online_weekly.csv") 
+
+online <- read_csv("online_weekly.csv")
 
 fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
 
@@ -39,7 +47,118 @@ fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
 cable_joined_online <- merge(cable, online, by = c("name","date" ))
 ```
 
-Percentage totals exceed 100 because some articles or stories mention multiple candidates.
+```{r join}
+clean_cable_joined_online <- cable_joined_online %>% 
+  filter(name %in% c("Joe Biden", 
+                     "Pete Buttigieg", 
+                     "Elizabeth Warren", 
+                     "Kamala Harris", 
+                     "Bernie Sanders",
+                     "Beto O'Rourke",
+                     "Julian Castro",
+                     "Amy Klobuchar",
+                     "Cory Booker")) %>% 
+  group_by(name)
+
+# Needed to distinguish on graph w/ fill and color
+
+clean_cable_joined_online$query.x <- "Cable News"
+clean_cable_joined_online$query.y <- "Online Articles"
+
+# Start graph
+
+ggplot(clean_cable_joined_online, aes(x = date, 
+                        y = pct_of_all_candidate_stories,
+                        color = query.x,
+                        fill = query.x)) +
+  
+  geom_point() +
+  
+  geom_smooth(level  = .50, method = "loess") +
+  
+  # for second line
+  
+  geom_point(aes(x = date, 
+                        y = pct_of_all_candidate_clips,
+                        color = query.y,
+                        fill = query.y)) +
+  
+  geom_smooth(aes(x = date, 
+                        y = pct_of_all_candidate_clips,
+                        color = query.y,
+                        fill = query.y),
+              
+              level  = .50, method = "loess") +
+  
+  # Makes scale more readable
+  
+  scale_y_sqrt(labels = scales::percent,
+    breaks = c(.01, .025, .05, 0.1, .3, 0.2, 0.4, .5, .6)) +
+  
+  facet_wrap(~name) +
+  
+#  scale_x_date(date_breaks = "1 month") + 
+  
+  # Style Settings
+  
+  labs(x = NULL, y = "Percent of Articles and Stories That Mention Each Candidate",
+       title = "How often are the candidates mentioned in cable and online news?",
+       subtitle = "Cable includes CNN, Fox News, and MSNBC - Online articles sourced from the Media Cloud database",
+       caption = "Source: FiveThirtyEight.com") +
+  
+  scale_color_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired") +
+  
+  scale_fill_discrete(name = "Media Type") + 
+  scale_color_discrete(name = "Media Type") +
+  
+  
+  theme_tufte() +
+  
+  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+        plot.subtitle = element_text(face = "italic"),
+        legend.title = element_text(size = rel(1.2), face = "bold"),
+        axis.title.y = element_text(size = rel(1.2)),
+        plot.caption = element_text(face = "italic"),
+        panel.grid.major.y = element_line(color = "gray"),
+        axis.line.x = element_line(), axis.line.y = element_line())
+
+```
+
+
+```{r change_table}
+
+# Cable table
+
+cable_table <- cable %>% 
+  select(name, date, pct_of_all_candidate_clips) %>% 
+  filter(date == "2019-01-06" | date == "2019-07-07") %>% 
+  spread(key = date, value = pct_of_all_candidate_clips) %>% 
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Cable 1", "Cable 2")) 
+
+cable_table <- cable_table %>% 
+  mutate(change = cable_table$'Cable 2' - cable_table$'Cable 1')
+
+# Online table
+
+online_table <- online %>% 
+  select(name, date, pct_of_all_candidate_stories) %>% 
+  filter(date == "2019-01-06" | date == "2019-07-07") %>% 
+  spread(key = date, value = pct_of_all_candidate_stories) %>% 
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Online 1", "Online 2"))
+
+as.numeric(as.character(cable_table$'Online 1'))
+as.numeric(as.character(cable_table$'Online 2'))
+
+joined_table <- left_join(cable_table, online_table) %>% 
+  mutate()
+
+```
+
+
+
+
+
 
 ```{r cable_graph}
 
@@ -178,86 +297,6 @@ Percentage totals exceed 100 because some articles or stories mention multiple c
 #         plot.caption = element_text(face = "italic"),
 #         panel.grid.major.y = element_line(color = "gray"))
 ```
-
-
-```{r join}
-clean_cable_joined_online <- cable_joined_online %>% 
-  filter(name %in% c("Joe Biden", 
-                     "Pete Buttigieg", 
-                     "Elizabeth Warren", 
-                     "Kamala Harris", 
-                     "Bernie Sanders",
-                     "Beto O'Rourke",
-                     "Julian Castro",
-                     "Amy Klobuchar",
-                     "Cory Booker")) %>% 
-  group_by(name)
-
-# Needed to distinguish on graph w/ fill and color
-
-clean_cable_joined_online$query.x <- "Cable News"
-clean_cable_joined_online$query.y <- "Online Articles"
-
-# Start graph
-
-ggplot(clean_cable_joined_online, aes(x = date, 
-                        y = pct_of_all_candidate_stories,
-                        color = query.x,
-                        fill = query.x)) +
-  
-  geom_point() +
-  
-  geom_smooth(level  = .50, method = "loess") +
-  
-  # for second line
-  
-  geom_point(aes(x = date, 
-                        y = pct_of_all_candidate_clips,
-                        color = query.y,
-                        fill = query.y)) +
-  
-  geom_smooth(aes(x = date, 
-                        y = pct_of_all_candidate_clips,
-                        color = query.y,
-                        fill = query.y),
-              
-              level  = .50, method = "loess") +
-  
-  # Makes scale more readable
-  
-  scale_y_sqrt(labels = scales::percent,
-    breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
-  
-  facet_wrap(~name) +
-  
-#  scale_x_date(date_breaks = "1 month") + 
-  
-  # Style Settings
-  
-  labs(x = NULL, y = "Percent of Articles and Stories That Mention Each Candidate",
-       title = "How often are the candidates mentioned in cable and online news?",
-       subtitle = "Cable includes CNN, Fox News, and MSNBC - Online articles sourced from the Media Cloud database",
-       caption = "Source: FiveThirtyEight.com") +
-  
-  scale_color_brewer(palette = "Paired") +
-  scale_fill_brewer(palette = "Paired") +
-  
-  scale_fill_discrete(name = "Media Type") + 
-  scale_color_discrete(name = "Media Type") +
-  
-  theme_tufte() +
-  
-  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
-        plot.subtitle = element_text(face = "italic"),
-        legend.title = element_text(size = rel(1.2), face = "bold"),
-        axis.title.y = element_text(size = rel(1.2)),
-        plot.caption = element_text(face = "italic"),
-        panel.grid.major.y = element_line(color = "gray"))
-
-```
-
-
-
 
 
 
