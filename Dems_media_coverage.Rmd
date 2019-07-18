@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(dplyr)
 library(tidyverse)
 library(ggplot2)
@@ -30,6 +30,8 @@ online <- read_csv("online_weekly.csv")
 
 fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
 ```
+
+Percentage totals exceed 100 because some articles or stories mention multiple candidates.
 
 ```{r cable_graph}
 
@@ -59,8 +61,8 @@ ggplot(clean_cable, aes(x = date,
   
   labs(x = NULL, y = "Percent of Coverage",
        title = "Cable Attention Paid to Top Democratic Candidates",
-       subtitle = "Across CNN, Fox News, and MSNBC",
-       caption = "Source: FiveThirtyEight") +
+       subtitle = "Averages Greater than 5% Across CNN, Fox News, and MSNBC",
+       caption = "Source: FiveThirtyEight.com") +
   
   scale_color_brewer(palette = "Paired") +
   scale_fill_brewer(palette = "Paired") +
@@ -78,7 +80,99 @@ ggplot(clean_cable, aes(x = date,
         panel.grid.major.y = element_line(color = "gray"))
 ```
 
+```{r online_graph}
+clean_online <- online %>% 
+  filter(name %in% c("Joe Biden", 
+                     "Pete Buttigieg", 
+                     "Elizabeth Warren", 
+                     "Kamala Harris", 
+                     "Bernie Sanders",
+                     "Cory Booker",
+                     "Amy Klobuchar")) %>% 
+  group_by(name)
 
+
+ggplot(clean_online, aes(x = date, 
+                        y = pct_of_all_candidate_stories,
+                        color = name,
+                        fill = name)) +
+  
+  geom_point() +
+  geom_smooth(level  = .50, method = "loess") +
+  
+  scale_y_sqrt(labels = scales::percent,
+    breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
+  
+#  scale_x_date(date_breaks = "1 month") + 
+  
+  labs(x = NULL, y = "Percent of Coverage",
+       title = "Online Attention Paid to Top Democratic Candidates",
+       subtitle = "Averages Greater Than 10% in the Media Cloud database",
+       caption = "Source: FiveThirtyEight.com") +
+  
+  scale_color_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired") +
+  
+  scale_fill_discrete(name = "Candidate") + 
+  scale_color_discrete(name = "Candidate") +
+  
+  theme_tufte() +
+  
+  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+        plot.subtitle = element_text(face = "italic"),
+        legend.title = element_text(size = rel(1.2), face = "bold"),
+        axis.title.y = element_text(size = rel(1.2)),
+        plot.caption = element_text(face = "italic"),
+        panel.grid.major.y = element_line(color = "gray"))
+
+
+```
+
+
+```{r yang}
+clean_yang <- online %>% 
+  filter(name %in% c("Andrew Yang", "Marianne Williamson", "Eric Swalwell", "Tulsi Gabbard")) %>% 
+  group_by(name)
+
+
+ggplot(clean_yang, aes(x = date, 
+                        y = pct_of_all_candidate_stories,
+                        color = name,
+                        fill = name)) +
+  
+  geom_point() +
+  geom_smooth(level  = .50, method = "loess") +
+  
+  scale_y_sqrt(labels = scales::percent,
+    breaks = c(.01, .025, .05, 0.1, 0.2, 0.4, .6)) +
+  
+#  scale_x_date(date_breaks = "1 month") + 
+  
+  labs(x = NULL, y = "Percent of Coverage",
+       title = "Online Attention Paid to Top Democratic Candidates",
+       subtitle = "From the Media Cloud database",
+       caption = "Source: FiveThirtyEight.com") +
+  
+  scale_color_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Paired") +
+  
+  scale_fill_discrete(name = "Candidate") + 
+  scale_color_discrete(name = "Candidate") +
+  
+  theme_tufte() +
+  
+  theme(plot.title = element_text(size = rel(1.5), face ="bold"),
+        plot.subtitle = element_text(face = "italic"),
+        legend.title = element_text(size = rel(1.2), face = "bold"),
+        axis.title.y = element_text(size = rel(1.2)),
+        plot.caption = element_text(face = "italic"),
+        panel.grid.major.y = element_line(color = "gray"))
+
+
+
+
+
+```
 
 
 
