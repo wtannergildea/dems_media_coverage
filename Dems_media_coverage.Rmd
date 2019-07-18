@@ -128,30 +128,62 @@ ggplot(clean_cable_joined_online, aes(x = date,
 
 ```{r change_table}
 
-# Cable table
+# Cable table data
 
 cable_table <- cable %>% 
   select(name, date, pct_of_all_candidate_clips) %>% 
   filter(date == "2019-01-06" | date == "2019-07-07") %>% 
   spread(key = date, value = pct_of_all_candidate_clips) %>% 
-  setnames(old=c("2019-01-06","2019-07-07"), new=c("Cable 1", "Cable 2")) 
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Cable", "Jul. 7th Cable")) %>% 
+  mutate("Percent Cable Change" = cable_table$'Jul. 7th Cable' - cable_table$'Jan. 6th Cable')
 
-cable_table <- cable_table %>% 
-  mutate(change = cable_table$'Cable 2' - cable_table$'Cable 1')
-
-# Online table
+# Online table data
 
 online_table <- online %>% 
   select(name, date, pct_of_all_candidate_stories) %>% 
   filter(date == "2019-01-06" | date == "2019-07-07") %>% 
   spread(key = date, value = pct_of_all_candidate_stories) %>% 
-  setnames(old=c("2019-01-06","2019-07-07"), new=c("Online 1", "Online 2"))
+  setnames(old=c("2019-01-06","2019-07-07"), new=c("Jan. 6th Online", "Jul. 7th Online")) %>% 
+  mutate("Percent Online Change" = online_table$'Jul. 7th Online' - online_table$'Jan. 6th Online')
 
-as.numeric(as.character(cable_table$'Online 1'))
-as.numeric(as.character(cable_table$'Online 2'))
+# join data
 
-joined_table <- left_join(cable_table, online_table) %>% 
-  mutate()
+joined_table <- left_join(cable_table, online_table) 
+
+
+# construct table
+gt(joined_table) %>%
+  tab_header(
+    title = "How much has coverage changed between January and now?",
+    subtitle = "January 6th to July 7th, 2019") %>% 
+  
+# Here I simply column names.
+  
+  cols_label("Jan. 6th Cable" = "Jan. 6",
+                            "Jul. 7th Cable" = "Jul. 7th",
+                            "Percent Cable Change" = "Percent Change",
+                            "Jan. 6th Online" = "Jan. 6th",
+                            "Jul. 7th Online" = "Jul. 7th",
+                            "Percent Online Change" = "Percent Change") %>%
+  
+ fmt_percent(columns = vars("Jan. 6th Cable",
+                            "Jul. 7th Cable",
+                            "Percent Cable Change",
+                            "Jan. 6th Online",
+                            "Jul. 7th Online",
+                            "Percent Online Change"))  %>% 
+  
+  tab_spanner(label = "Cable", 
+              columns = vars("Jan. 6th Cable", "Jul. 7th Cable", "Percent Cable Change")) %>%
+  
+  tab_spanner(label = "Online", 
+              columns = vars("Jan. 6th Online", "Jul. 7th Online", "Percent Online Change")) %>% 
+  
+  tab_source_note("Source: FiveThirtyEight.com") %>% 
+  tab_source_note("Data collected by...")
+  
+# This sequence of functions allows the table to transfer nicely into RMarkdown.
+    # as_raw_html() %>% as.character() %>% cat()
 
 ```
 
