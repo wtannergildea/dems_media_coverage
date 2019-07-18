@@ -1,0 +1,31 @@
+---
+title: "Dems Media Coverage"
+author: "Tanner Gildea"
+date: "7/17/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(janitor)
+library(readxl)
+library(gt)
+library(ggthemes)
+
+download.file(url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/media-mentions-2020/cable_weekly.csv",
+              destfile  = "~/Desktop/R.projects/dems_media_coverage/cable_weekly.csv",
+              mode = "wb")    
+
+download.file(url = "https://raw.githubusercontent.com/fivethirtyeight/data/master/media-mentions-2020/online_weekly.csv",
+              destfile  = "~/Desktop/R.projects/dems_media_coverage/online_weekly.csv",
+              mode = "wb")   
+
+cable <- read_csv("cable_weekly.csv")
+
+online <- read_csv("online_weekly.csv") 
+
+fs::file_delete(c("cable_weekly.csv", "online_weekly.csv"))
+```
