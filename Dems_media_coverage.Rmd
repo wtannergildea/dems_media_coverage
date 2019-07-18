@@ -150,7 +150,6 @@ online_table <- online %>%
 
 joined_table <- left_join(cable_table, online_table) 
 
-
 # construct table
 gt(joined_table) %>%
   tab_header(
