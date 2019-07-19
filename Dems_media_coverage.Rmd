@@ -156,6 +156,12 @@ online_table <- online_table %>%
 joined_table <- left_join(cable_table, online_table) 
 ```
 
+# Coverage Changes for All "Major" Candidates
+
+According to FiveThirtyEight, there are currently 24 (err, 23, RIP Eric Swalwell) "major candidates" in the Democratic primary field. Although I think there is plenty of room for a distinction to be made between major and minor candidates, FiveThirtyEight uses this categorization to collect data on all of them.
+
+So why not see how their coverage has changed?
+
 ```{r change_table, results="asis", fig.width = 5, fig.height = 8}
 # construct table
 gt(joined_table) %>%
@@ -181,14 +187,15 @@ gt(joined_table) %>%
                             "Percent Online Change"),
              decimals = 1)  %>% 
   
-  tab_spanner(label = "Cable", 
+  tab_spanner(label = "Cable Clips", 
               columns = vars("Jan. 6th Cable", "Jul. 7th Cable", "Percent Cable Change")) %>%
   
-  tab_spanner(label = "Online", 
+  tab_spanner(label = "Online Articles", 
               columns = vars("Jan. 6th Online", "Jul. 7th Online", "Percent Online Change")) %>% 
   
-  tab_source_note("Source: FiveThirtyEight.com") %>% 
-  tab_source_note("Data collected by...")  %>%  
+    tab_source_note("Source: Internet Archive's Television News Archive via the GDELT Project, Media Cloud, all via FiveThirtyEight.com") %>% 
+  
+  tab_source_note("Per FiveThirtyEight: “Includes all candidates that qualify as “major” in FiveThirtyEight’s rubric. Each network’s daily news coverage is chopped up into 15-second clips, and each clip that includes a candidate’s name is counted as one mention. For both cable and online news, our search queries look for an exact match for each candidate’s name, except for Julian Castro, for whom our search query is “Julian Castro” OR “Julián Castro”. Media Cloud searches use two of the database’s publication lists: “top online news” and “digital native” publications.”")  %>%  
   
   # add cell coloring
   
@@ -217,7 +224,7 @@ gt(joined_table) %>%
     
     # the magic fix to oversizing!
     
-    row.padding = 2)
+    row.padding = 3)
 
 # This sequence of functions allows the table to transfer nicely into RMarkdown.
   #  as_raw_html() %>% as.character() %>% cat()
@@ -255,6 +262,13 @@ joined_table_bump <- left_join(cable_table_bump, online_table_bump, by = "name")
 
 ```
 
+***** 
+# Post-Debate Bump?
+
+The great part about FiveThirtyEight's dataset is that it tracks coverage week to week, so you can isolate changes in coverage around specific events - for example, the first Democratic primary debates. Held over two nights June 26-27 in Miami, FL, the debates saw 20 candidates appear on stage. 
+
+Below is the change in cable and online coverage of candidates based on the news cycle prior to the debate (June 16-22) and the news cycle during and just after (June 23-29).
+
 
 ```{r change_table_bump, results="asis", fig.width = 5, fig.height = 8}
 # construct table
@@ -281,15 +295,13 @@ gt(joined_table_bump) %>%
                             "Percent Online Change"), 
              decimals = 1)  %>% 
   
-  tab_spanner(label = "Cable", 
+  tab_spanner(label = "Cable Clips", 
               columns = vars("Before.x", "After.x", "Percent Cable Change")) %>%
   
-  tab_spanner(label = "Online", 
+  tab_spanner(label = "Online Articles", 
               columns = vars("Before.y", "After.y", "Percent Online Change")) %>% 
   
-  tab_source_note("Source: FiveThirtyEight.com") %>% 
-  tab_source_note("Data collected by...")  %>% 
-  
+  tab_source_note("Source: Same as above.") %>% 
   # add cell coloring
   
   data_color(
@@ -315,9 +327,16 @@ gt(joined_table_bump) %>%
     
     # the magic fix to oversizing!
     
-    row.padding = 2)
+    row.padding = 3)
   
 # This sequence of functions allows the table to transfer nicely into RMarkdown.
     # as_raw_html() %>% as.character() %>% cat()
 
 ```
+
+
+You'll notice that in cable television stories, Kamala Harris clearly had a burst a coverage. A larger pool of candidates received a post-debate bounce online - one that candidates such as Julian Castro badly needed.
+
+*****
+
+I realized after constructing this table that Mehta had already published [an article](https://fivethirtyeight.com/features/media-outlets-paid-way-more-attention-to-kamala-harris-after-the-debate/) about the effects of the first debate on candidate coverage - makes sense, given this is their full-time job. Maybe I'll beat them to it next time... the [next debates](https://www.cnn.com/politics/live-news/cnn-democratic-debate-draw/index.html) are set for July 30-31 in Detroit!
